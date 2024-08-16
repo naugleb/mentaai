@@ -22,7 +22,7 @@ def detect_crisis(message):
     if contains_critical_keyword:
         return True
     # Trigger crisis response if a dangerous keyword is found and sentiment is below the threshold
-    if contains_dangerous_keyword and sentiment_score <= -0.6:
+    if contains_dangerous_keyword and sentiment_score <= -0.65:
         return True
     # Otherwise, do not trigger crisis response
     return False

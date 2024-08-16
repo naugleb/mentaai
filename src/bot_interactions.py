@@ -155,10 +155,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "I'm here to support you with any mental health concerns you may have. 🧠💬\n"
         "Our conversations are private and designed to make you feel safe and heard. 🔒\n"
         "Powered by large language models, I can engage in meaningful conversations, drawing on a vast amount of knowledge to provide helpful insights.\n"
-        "I utilize advanced technologies, including sentiment analysis and emotion detection, to better understand what you're experiencing. Additionally, I learn from real therapist-client transcripts using information retrieval techniques, helping to guide our interaction with empathy and relevance.\n"
         "Together, we can work on your journey toward well-being. 🌱"
     )
     await context.bot.send_message(chat_id=update.effective_chat.id, text=capabilities_message)
+
+    # Restart possibility message
+    restart_info_message = "If at any point you wish to restart the conversation and clear my memory, simply type '/restart'."
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=restart_info_message)
 
     # Request the user's name
     ask_name_message = "Firstly, I'd love to get to know you better. Could you please tell me your first name only? This will help me personalize our conversation."
@@ -166,6 +169,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Set the state to indicate that the bot is waiting for the user's name
     user_state[user_id] = {"awaiting_name": True}
+
+# Function to reset the user's memory and state
+async def restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+    # Clear the user's memory
+    if user_id in user_memories:
+        del user_memories[user_id]
+    # Clear the user's state
+    if user_id in user_state:
+        del user_state[user_id]
+    # Send a confirmation message to the user
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="The conversation has been restarted. Let's start fresh! 😊")
+    # Trigger the start command
+    await start(update, context)
 
 # Define the message handler for processing user input and generating responses
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):

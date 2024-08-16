@@ -4,7 +4,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from pytz import timezone
-from bot_interactions import start, handle_message, daily_check_in
+from bot_interactions import start, restart, handle_message, daily_check_in
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -13,11 +13,6 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 logger.info("Bot is starting...")
-
-# Add this at different points in your application to check if it's running
-logger.info("Environment Variables:")
-logger.info(f"TELEGRAM_TOKEN: {os.getenv('TELEGRAM_TOKEN')}")
-logger.info(f"OPENAI_API_KEY: {os.getenv('OPENAI_API_KEY')}")
 
 # Suppress tokenizers parallelism warnings to prevent unwanted console output
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -33,6 +28,7 @@ logger = logging.getLogger(__name__)
 def main():
     application = ApplicationBuilder().token(os.getenv('TELEGRAM_TOKEN')).build()
     application.add_handler(CommandHandler('start', start))
+    application.add_handler(CommandHandler('restart', restart))  # Add the restart command handler
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     # Initialize the scheduler
     scheduler = AsyncIOScheduler()
