@@ -1,0 +1,12 @@
+__pycache__/
+mentaAI/
+data/
+*.pyc
+*.pyo
+*.pyo
+*.pyd
+*.pdb
+*.log
+*.local
+.DS_Store
+.env
