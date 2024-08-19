@@ -5,13 +5,13 @@ from langchain_openai import ChatOpenAI
 from proxy_setup import create_http_client_with_proxy
 from dotenv import load_dotenv
 
-# Load environment variables
+#Load environment variables
 load_dotenv()
 
-# Initialize an emotion recognition model to detect specific emotions from user input
+#Initialize an emotion recognition model to detect specific emotions from user input
 emotion_classifier = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", top_k=None)
 
-# Define the system message that instructs the bot's behavior during conversations
+#Define the system message that instructs the bot's behavior during conversations
 client_manager_system_message = SystemMessage(
     content=(
         """
@@ -39,10 +39,10 @@ client_manager_system_message = SystemMessage(
     )
 )
 
-# Create the HTTP client with proxy configuration
+#Create the HTTP client with proxy configuration
 http_client = create_http_client_with_proxy()
 
-# Initialize OpenAI API client using LangChain with the configured HTTP client
+#Initialize OpenAI API client using LangChain with the configured HTTP client
 openai_api_key = os.getenv('OPENAI_API_KEY')
 if not openai_api_key:
     raise ValueError("No OPENAI_API_KEY found in environment variables")

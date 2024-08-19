@@ -4,32 +4,32 @@ from telegram.ext import ContextTypes
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from resources import critical_keywords, dangerous_keywords
 
-# Set up logging to capture information and errors for debugging
+#Set up logging to capture information and errors for debugging
 logger = logging.getLogger(__name__)
 
-# Initialize sentiment analyzer for detecting emotional tone in user messages
+#Initialize sentiment analyzer for detecting emotional tone in user messages
 analyzer = SentimentIntensityAnalyzer()
 
-# Function to detect crisis situations based on keywords and sentiment analysis
+#Function to detect crisis situations based on keywords and sentiment analysis
 def detect_crisis(message):
-    # Check for critical and dangerous keywords in the user's message
+    #Check for critical and dangerous keywords in the user's message
     contains_critical_keyword = any(keyword in message.lower() for keyword in critical_keywords)
     contains_dangerous_keyword = any(keyword in message.lower() for keyword in dangerous_keywords)
-    # Analyze the sentiment score of the message
+    #Analyze the sentiment score of the message
     sentiment_score = analyzer.polarity_scores(message)['compound']
     logger.info(f"Sentiment score: {sentiment_score} for message: {message[:30]}...")  # Anonymized logging
-    # Trigger crisis response immediately if a critical keyword is found
+    #Trigger crisis response immediately if a critical keyword is found
     if contains_critical_keyword:
         return True
-    # Trigger crisis response if a dangerous keyword is found and sentiment is below the threshold
+    #Trigger crisis response if a dangerous keyword is found and sentiment is below the threshold
     if contains_dangerous_keyword and sentiment_score <= -0.65:
         return True
-    # Otherwise, do not trigger crisis response
+    #Otherwise, do not trigger crisis response
     return False
 
-# Asynchronous function to send a crisis response with UK-specific resources
+#Function to send a crisis response with UK-specific resources
 async def crisis_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Immediate supportive response to a detected crisis situation
+    #Immediate supportive response to a detected crisis situation
     crisis_message = (
         "It sounds like you're going through something very difficult right now, and I'm really sorry to hear that. "
         "Please know that there is help available. "

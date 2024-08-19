@@ -12,22 +12,22 @@ from langchain.memory import ConversationSummaryMemory, ConversationBufferWindow
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
-# Load environment variables
+#Load environment variables
 load_dotenv()
 
-# Set up logging to capture information and errors for debugging
+#Set up logging to capture information and errors for debugging
 logger = logging.getLogger(__name__)
 
-# Initialize user state to keep track of user-specific data
+#Initialize user state to keep track of user-specific data
 user_state = {}
 
-# Initialize conversation memories with separate instances for each user
+#Initialize conversation memories
 user_memories = {}
 
-# Set up an HTTP client with proxy for summary memory
+#Set up an HTTP client with proxy 
 http_client_summary = create_http_client_with_proxy()
 
-# Define a prompt template for generating responses using the language model chain
+#Define a prompt template for generating responses using the language model chain
 prompt_template = PromptTemplate(
     input_variables=["system_message", "retrieved_context", "memory_context", "user_name", "prompt", "emotion"],
     template="""
@@ -43,10 +43,10 @@ prompt_template = PromptTemplate(
     """
 )
 
-# Create a language model chain with the defined prompt template
+#Create a language model chain with the defined prompt template
 llm_chain = LLMChain(llm=llm, prompt=prompt_template)
 
-# Initialize global conversation memory
+#Initialize global conversation memory
 def initialize_memory(user_id):
     if user_id not in user_memories:
         user_memories[user_id] = {
@@ -57,10 +57,10 @@ def initialize_memory(user_id):
             )
         }
 
-# Function to manage conversation memory and retrieve the user's name
+#Function to manage conversation memory and retrieve the user's name
 def memory_chain(user_id):
     initialize_memory(user_id)
-    # Retrieve conversation memory context
+    #Retrieve conversation memory context
     buffer_memory = user_memories[user_id]['buffer_memory']
     summary_memory = user_memories[user_id]['summary_memory']
     try:
@@ -78,26 +78,25 @@ def memory_chain(user_id):
         summary_context = ""
         logger.error(f"Error loading summary memory for user {user_id}: {e}")
 
-    # Combine buffer and summary contexts
+    #Combine buffer and summary contexts
     memory_context = f"Summary:\n{summary_context}\n\nRecent Interactions:\n{buffer_context}"
-    # Retrieve the user's name from the state
+    #Retrieve the user's name from the state
     user_name = user_state.get(user_id, {}).get("name", "")
     
     return memory_context, user_name
 
-# Function to generate a response based on user input, detected emotion, and retrieved context
+#Function to generate a response based on user input, detected emotion, and retrieved context
 def generate_response(prompt, user_id):
     try:
-        # Retrieve conversation memory and user's name
+        #Retrieve conversation memory and user's name
         memory_context, user_name = memory_chain(user_id)
-        # Retrieve similar transcripts to use as context
+        #Retrieve similar transcripts to use as context
         retrieved_context = retrieve_similar_transcripts_chain(prompt)
-        
-        # Detect emotion in the user's input
+        #Detect emotion in the user's input
         emotion_scores = emotion_classifier(prompt)
         emotion = max(emotion_scores[0], key=lambda x: x['score'])['label']
 
-        # Build the full prompt for logging
+        #Build the full prompt for logging
         full_prompt = f"""
         {client_manager_system_message.content}
         User's name: {user_name}
@@ -108,9 +107,9 @@ def generate_response(prompt, user_id):
         Detected Emotion: {emotion}
         Counselor:
         """
-        logger.info(f"Full prompt for LLM: {full_prompt}")  # Log full prompt
+        logger.info(f"Full prompt for LLM: {full_prompt}")  #Log full prompt
         
-        # Generate the response using the language model chain
+        #Generate the response using the language model chain
         response_content = llm_chain.run({
             "system_message": client_manager_system_message.content,
             "retrieved_context": retrieved_context,
@@ -120,10 +119,10 @@ def generate_response(prompt, user_id):
             "emotion": emotion
         })
 
-        # Log user input and response
+        #Log user input and response
         logger.info(f"User input: {prompt} | Response: {response_content}")
 
-        # Save the context for future interactions
+        #Save the context for future interactions
         user_memories[user_id]['buffer_memory'].save_context({"input": prompt}, {"output": response_content})
         user_memories[user_id]['summary_memory'].save_context({"input": prompt}, {"output": response_content})
         return response_content
@@ -131,7 +130,7 @@ def generate_response(prompt, user_id):
         logger.error(f"Error generating response: {e}")
         raise
 
-# Asynchronous function for daily check-ins to ask users how they are feeling
+#Daily check-ins to ask users how they are feeling
 async def daily_check_in(application):
     for user_id, user_data in user_state.items():
         if user_data.get('awaiting_name') is False: # Check if the bot is not awaiting the user's name
@@ -141,16 +140,16 @@ async def daily_check_in(application):
         else:
             logger.info(f"Skipping user {user_id} because they are still awaiting name")
 
-# Define the start command handler to initialize the conversation
+#Define the start command handler to initialize the conversation
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     logger.info("Start command received")
 
-    # Initial welcome message
+    #Initial welcome message
     welcome_message = "Hi there! I'm MentaAI, your intelligent NLP-based mental health assistant. 😊"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=welcome_message)
 
-    # Capabilities message
+    #Capabilities message
     capabilities_message = (
         "I'm here to support you with any mental health concerns you may have. 🧠💬\n"
         "Our conversations are private and designed to make you feel safe and heard. 🔒\n"
@@ -159,39 +158,39 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await context.bot.send_message(chat_id=update.effective_chat.id, text=capabilities_message)
 
-    # Restart possibility message
+    #Restart possibility message
     restart_info_message = "If at any point you wish to restart the conversation and clear my memory, simply type '/restart'."
     await context.bot.send_message(chat_id=update.effective_chat.id, text=restart_info_message)
 
-    # Request the user's name
+    #Request the user's name
     ask_name_message = "Firstly, I'd love to get to know you better. Could you please tell me your first name only? This will help me personalize our conversation."
     await context.bot.send_message(chat_id=update.effective_chat.id, text=ask_name_message)
 
-    # Set the state to indicate that the bot is waiting for the user's name
+    #Set the state to indicate that the bot is waiting for the user's name
     user_state[user_id] = {"awaiting_name": True}
 
-# Function to reset the user's memory and state
+#Restart function
 async def restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
-    # Clear the user's memory
+    #Clear the user's memory
     if user_id in user_memories:
         del user_memories[user_id]
-    # Clear the user's state
+    #Clear the user's state
     if user_id in user_state:
         del user_state[user_id]
-    # Send a confirmation message to the user
+    #Send a confirmation message to the user
     await context.bot.send_message(chat_id=update.effective_chat.id, text="The conversation has been restarted. Let's start fresh! 😊")
-    # Trigger the start command
+    #Trigger the start command
     await start(update, context)
 
-# Define the message handler for processing user input and generating responses
+#Define the message handler for processing user input and generating responses
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_input = update.message.text.strip()
 
     logger.info(f"Handling message for user {user_id}, input: {user_input}")
 
-    # Check if the user is still setting their name
+    #Check if the user is still setting their name
     if user_id in user_state and user_state[user_id].get("awaiting_name"):
         if user_input.isalpha() and user_input.istitle():
             user_state[user_id] = {"name": user_input, "awaiting_name": False}
@@ -201,7 +200,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reask_name_message = "Please enter just your first name, starting with a capital letter, without any spaces or special characters."
             await context.bot.send_message(chat_id=update.effective_chat.id, text=reask_name_message)
     else:
-        # Handle the actual user input
+        #Handle the actual user input
         if detect_crisis(user_input):
             await crisis_response(update, context)
         else:
